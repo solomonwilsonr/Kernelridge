@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .core import digest, invalidate, plan, preflight
 from .lab import run
+from . import store as store_module
 
 
 def load(path):
@@ -33,6 +34,18 @@ def main():
     execution.add_argument("--timeout", type=int, default=10)
     report = sub.add_parser("report")
     report.add_argument("--input", required=True)
+    store = sub.add_parser("store", help="Persist and query preflight reports in a local SQLite store")
+    store_modes = store.add_subparsers(dest="store_mode", required=True)
+    store_save = store_modes.add_parser("save")
+    store_save.add_argument("--input", required=True)
+    store_save.add_argument("--db", default=store_module.DEFAULT_PATH)
+    store_list = store_modes.add_parser("list")
+    store_list.add_argument("--db", default=store_module.DEFAULT_PATH)
+    store_list.add_argument("--machine-revision")
+    store_list.add_argument("--artifact-revision")
+    store_show = store_modes.add_parser("show")
+    store_show.add_argument("--sha256", required=True)
+    store_show.add_argument("--db", default=store_module.DEFAULT_PATH)
     args = parser.parse_args()
     try:
         if args.command == "discover":
@@ -43,9 +56,16 @@ def main():
             result = invalidate(load(args.evidence), load(args.before), load(args.after))
         elif args.command == "experiment":
             result = plan(load(args.catalog), args.budget_minutes) if args.mode == "plan" else run(args.binary, args.timeout)
-        else:
+        elif args.command == "report":
             record = load(args.input)
             result = {"report": record, "sha256": digest(record), "signed": False, "approval_required": True}
+        else:
+            if args.store_mode == "save":
+                result = store_module.save(load(args.input), args.db)
+            elif args.store_mode == "list":
+                result = {"reports": store_module.list_reports(args.db, args.machine_revision, args.artifact_revision)}
+            else:
+                result = store_module.show(args.sha256, args.db)
         encoded = json.dumps(result, indent=2, allow_nan=False) + "\n"
         if args.output:
             Path(args.output).write_text(encoded)
