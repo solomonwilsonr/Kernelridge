@@ -40,15 +40,28 @@ def changes(before, after):
 
 def invalidate(evidence, before, after):
     changed = changes(before, after)
-    result = []
-    for record in evidence:
-        item = dict(record)
+    result = [dict(record) for record in evidence]
+    invalidated = [False] * len(result)
+    by_claim = {item["claim_id"]: i for i, item in enumerate(result) if "claim_id" in item}
+    for i, item in enumerate(result):
         assumptions = item.get("assumptions")
         affected = not assumptions or any(c == a or c.startswith(a + ".") or a.startswith(c + ".") for c in changed for a in assumptions)
         # Unknown dependency coverage cannot justify reuse after a change.
         if changed and (affected or not item.get("dependencies_complete", False)):
+            invalidated[i] = True
+    # Transitive propagation: a record that depends_on an invalidated claim is itself invalidated.
+    settled = False
+    while not settled:
+        settled = True
+        for i, item in enumerate(result):
+            if invalidated[i]:
+                continue
+            if any(invalidated[by_claim[dep]] for dep in item.get("depends_on") or [] if dep in by_claim):
+                invalidated[i] = True
+                settled = False
+    for i, item in enumerate(result):
+        if invalidated[i]:
             item["status"] = "POTENTIALLY_INVALIDATED"
-        result.append(item)
     return {"changed_paths": changed, "evidence": result}
 
 

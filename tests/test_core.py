@@ -43,6 +43,30 @@ class CoreTests(unittest.TestCase):
         states = [r['status'] for r in invalidate(records, self.machine, after)['evidence']]
         self.assertEqual(states, ['POTENTIALLY_INVALIDATED', 'SUPPORTED', 'POTENTIALLY_INVALIDATED'])
 
+    def test_transitive_depends_on_invalidation(self):
+        after = copy.deepcopy(self.machine)
+        after['kernel'] = '6.12'
+        records = [
+            dict(claim_id='root', status='SUPPORTED', assumptions=['kernel'], dependencies_complete=True),
+            dict(claim_id='mid', status='SUPPORTED', assumptions=['abi'], dependencies_complete=True, depends_on=['root']),
+            dict(claim_id='leaf', status='SUPPORTED', assumptions=['abi'], dependencies_complete=True, depends_on=['mid']),
+            dict(claim_id='unrelated', status='SUPPORTED', assumptions=['abi'], dependencies_complete=True),
+        ]
+        states = {r['claim_id']: r['status'] for r in invalidate(records, self.machine, after)['evidence']}
+        self.assertEqual(states['root'], 'POTENTIALLY_INVALIDATED')
+        self.assertEqual(states['mid'], 'POTENTIALLY_INVALIDATED')
+        self.assertEqual(states['leaf'], 'POTENTIALLY_INVALIDATED')
+        self.assertEqual(states['unrelated'], 'SUPPORTED')
+
+    def test_depends_on_absent_matches_prior_behavior(self):
+        after = copy.deepcopy(self.machine)
+        after['kernel'] = '6.12'
+        records = [dict(status='SUPPORTED', assumptions=['kernel'], dependencies_complete=True),
+                   dict(status='SUPPORTED', assumptions=['abi'], dependencies_complete=True),
+                   dict(status='SUPPORTED', assumptions=['abi'])]
+        states = [r['status'] for r in invalidate(records, self.machine, after)['evidence']]
+        self.assertEqual(states, ['POTENTIALLY_INVALIDATED', 'SUPPORTED', 'POTENTIALLY_INVALIDATED'])
+
     def test_parent_dependencies(self):
         records = [dict(status='SUPPORTED', assumptions=['libraries'], dependencies_complete=True)]
         after = copy.deepcopy(self.machine)
