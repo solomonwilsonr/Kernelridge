@@ -1,0 +1,1 @@
+{"id":"application-v2-portable","architecture":"riscv64","required_extensions":["i","m"],"abi":"lp64d","libraries":{"glibc":"2.38"}}

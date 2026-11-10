@@ -1,0 +1,1 @@
+[{"id":"smoke","cost_minutes":2,"information_gain":1,"severity":10,"relevance":1,"mandatory":true},{"id":"vector-diagnosis","cost_minutes":5,"information_gain":0.8,"severity":5,"relevance":1},{"id":"physical-board","cost_minutes":20,"information_gain":1,"severity":10,"relevance":1}]

@@ -1,0 +1,1 @@
+{"id":"riscv-lab-001","architecture":"riscv64","isa_extensions":["i","m","a","f","d","c"],"abi":"lp64d","libraries":{"glibc":"2.38"}}
