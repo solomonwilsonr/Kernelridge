@@ -7,6 +7,7 @@ from .core import digest, invalidate, plan, preflight
 from .lab import run
 from . import store as store_module
 from .elf import inspect as elf_inspect
+from . import attest as attest_module
 
 
 def load(path):
@@ -37,6 +38,15 @@ def main():
     report.add_argument("--input", required=True)
     inspect = sub.add_parser("inspect", help="Derive a machine/artifact JSON fragment from a real ELF binary")
     inspect.add_argument("--binary", required=True)
+    keygen = sub.add_parser("keygen", help="Generate a local Ed25519 keypair for signing attestations (requires openssl)")
+    keygen.add_argument("--private", required=True)
+    keygen.add_argument("--public", required=True)
+    attest = sub.add_parser("attest", help="Wrap a record with its canonical digest and an optional Ed25519 signature")
+    attest.add_argument("--input", required=True)
+    attest.add_argument("--private", help="Sign with this Ed25519 private key; omitted or unavailable yields an unsigned export")
+    verify = sub.add_parser("verify", help="Verify an attestation's signature against a public key")
+    verify.add_argument("--attestation", required=True)
+    verify.add_argument("--public", required=True)
     store = sub.add_parser("store", help="Persist and query preflight reports in a local SQLite store")
     store_modes = store.add_subparsers(dest="store_mode", required=True)
     store_save = store_modes.add_parser("save")
@@ -64,6 +74,21 @@ def main():
             result = {"report": record, "sha256": digest(record), "signed": False, "approval_required": True}
         elif args.command == "inspect":
             result = elf_inspect(args.binary)
+        elif args.command == "keygen":
+            result = attest_module.keygen(args.private, args.public)
+        elif args.command == "attest":
+            record = load(args.input)
+            key_digest = digest(record)
+            signature = attest_module.sign(key_digest, args.private) if args.private else None
+            result = {"report": record, "sha256": key_digest, "signed": signature is not None, "signature": signature,
+                      "algorithm": "ed25519" if signature is not None else None, "approval_required": True}
+            if args.private and signature is None:
+                result["note"] = "openssl unavailable or signing failed; export is unsigned"
+        elif args.command == "verify":
+            attestation = load(args.attestation)
+            valid = bool(attestation.get("signed")) and bool(attestation.get("signature")) and attest_module.verify(
+                attestation.get("sha256"), attestation.get("signature"), args.public)
+            result = {"sha256": attestation.get("sha256"), "valid": valid}
         else:
             if args.store_mode == "save":
                 result = store_module.save(load(args.input), args.db)
@@ -76,7 +101,7 @@ def main():
             Path(args.output).write_text(encoded)
         else:
             print(encoded, end="")
-        return 1 if result.get("decision") == "FAIL" or result.get("status") == "BLOCKED" else 0
+        return 1 if result.get("decision") == "FAIL" or result.get("status") == "BLOCKED" or result.get("valid") is False else 0
     except (ValueError, TypeError, KeyError, OSError) as exc:
         parser.exit(2, f"kernelridge: {exc}\n")
 
