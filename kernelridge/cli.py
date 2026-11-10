@@ -63,11 +63,16 @@ def main():
     serve.add_argument("--db", default=store_module.DEFAULT_PATH)
     serve.add_argument("--port", type=int, default=8765)
     serve.add_argument("--bind", default="127.0.0.1")
+    sub.add_parser("mcp", help="Run a minimal MCP server over stdio exposing preflight/inspect/invalidate/experiment-plan/report/store as tools")
     args = parser.parse_args()
     if args.command == "serve":
         from .dashboard import run_forever
         print(f"kernelridge dashboard listening on http://{args.bind}:{args.port} (Ctrl+C to stop)")
         run_forever(args.db, args.port, args.bind)
+        return 0
+    if args.command == "mcp":
+        from .mcp_server import serve as mcp_serve
+        mcp_serve()
         return 0
     try:
         if args.command == "discover":

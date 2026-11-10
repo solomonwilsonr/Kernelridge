@@ -49,6 +49,7 @@ takes a stricter stance:
 | Generate an Ed25519 keypair and sign/verify a report digest (via the system `openssl`) | `keygen`, `attest`, `verify` |
 | Persist and query report history in a local SQLite store | `store save`/`list`/`show` |
 | Serve a minimal read-only HTML/JSON dashboard over stored report history | `serve` |
+| Expose preflight/inspect/invalidate/experiment-plan/report/store as MCP tools over stdio | `mcp` |
 
 ## Installation
 
@@ -198,6 +199,26 @@ framework) over a SQLite store built by `store save`: an HTML index at `/`,
 a JSON listing at `/reports`, and a single record at `/reports/<sha256>`.
 No write endpoints.
 
+### `mcp`
+
+Runs a minimal [MCP](https://modelcontextprotocol.io) server over stdio —
+hand-rolled JSON-RPC 2.0 framing (one JSON object per line), no third-party
+MCP SDK dependency. Exposes `preflight`, `invalidate`, `experiment_plan`,
+`inspect`, `report`, `store_save`, `store_list`, and `store_show` as MCP
+tools, so an MCP client (e.g. an AI coding assistant) can call Kernelridge's
+checks directly instead of shelling out to the CLI. Tool arguments are inline
+JSON objects, not file paths (except `inspect`'s `binary_path`). A failed tool
+call is reported as an MCP tool error (`isError: true`) rather than a
+protocol-level JSON-RPC error, so a client can recover; an unknown *method*
+is still a JSON-RPC error. Blocks reading stdin until the client closes it.
+
+```bash
+printf '%s\n%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+  | .venv/bin/kernelridge mcp
+```
+
 ## Development
 
 ```bash
@@ -210,8 +231,9 @@ mismatches and their remediation hints, unknown inventory, conservative and
 transitive invalidation, unaffected-evidence reuse, mandatory experiment
 budgets, stable report hashes, ELF header parsing (synthetic x86_64 and
 RISC-V fixtures), SQLite store round-trips, the signed-attestation degrade
-path (and a real openssl round-trip when available), and the read-only
-dashboard over an ephemeral HTTP server.
+path (and a real openssl round-trip when available), the read-only
+dashboard over an ephemeral HTTP server, and the MCP server's JSON-RPC
+framing, tool registry, and tool-call error handling.
 
 ## Scope and limitations
 
@@ -226,6 +248,8 @@ stdlib-only, no-third-party-dependency constraint:
   (`keygen`/`attest`/`verify`), degrading gracefully when `openssl` is absent
 - Deterministic, rule-keyed remediation hints on `FAIL` findings
 - A minimal read-only dashboard over stored report history (`serve`)
+- A minimal MCP server over stdio (`mcp`), exposing the same deterministic
+  operations as MCP tools for AI/agent clients
 
 Explicitly **not** implemented, and not attempted by the features above —
 these require infrastructure (real target hardware, large downloads,
@@ -234,7 +258,8 @@ external services) outside a local-first, dependency-free CLI prototype:
 - Target-specific QEMU system images and physical-board validation
 - True AI-assisted diagnosis or remediation (the remediation hints above are
   a fixed lookup table, not a model)
-- A writable API, broader dashboard functionality, or MCP integration
+- A writable HTTP API or broader dashboard functionality (the dashboard
+  stays read-only; `mcp` is stdio-only, not a network service)
 - Research benchmarks and measured failure-detection guarantees
 
 The experiment planner is a reproducible heuristic; it makes no claim of
