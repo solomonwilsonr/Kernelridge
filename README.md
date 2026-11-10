@@ -20,10 +20,7 @@ and it is explicit about what it can and cannot verify.
 > claim to reuse any VCM Machines code.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/preflight-dark.svg">
-    <img src="assets/diagrams/preflight-light.svg" alt="Fig. 1, preflight: a RISC-V board exposing imafdc on lp64d with glibc 2.38; the release needs the v extension, so isa_extensions fails and the decision is FAIL, exit 1" width="860">
-  </picture>
+  <img src="assets/diagrams/preflight.svg" alt="Fig. 1, preflight: a RISC-V board exposing imafdc on lp64d with glibc 2.38; the release needs the v extension, so isa_extensions fails and the decision is FAIL, exit 1" width="860">
 </p>
 
 ## Why Kernelridge
@@ -33,10 +30,7 @@ Most compatibility checks either rubber-stamp a deploy because the metadata
 takes a stricter stance:
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/verdicts-dark.svg">
-    <img src="assets/diagrams/verdicts-light.svg" alt="Fig. 2, verdicts: FAIL beats UNKNOWN beats REVIEW; a static match is never PASS, only a sandboxed runtime experiment is real evidence" width="860">
-  </picture>
+  <img src="assets/diagrams/verdicts.svg" alt="Fig. 2, verdicts: FAIL beats UNKNOWN beats REVIEW; a static match is never PASS, only a sandboxed runtime experiment is real evidence" width="860">
 </p>
 
 - **No optimistic PASS.** A static match between target and release metadata
@@ -145,10 +139,7 @@ invalidated claim is itself flagged, to a fixpoint. Evidence lists without
 `claim_id`/`depends_on` behave exactly as before.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/invalidation-dark.svg">
-    <img src="assets/diagrams/invalidation-light.svg" alt="Fig. 3, invalidation: glibc 2.38 to 2.39 invalidates evidence that assumes libraries and, transitively, evidence that depends on it; unrelated ABI evidence is reused" width="860">
-  </picture>
+  <img src="assets/diagrams/invalidation.svg" alt="Fig. 3, invalidation: glibc 2.38 to 2.39 invalidates evidence that assumes libraries and, transitively, evidence that depends on it; unrelated ABI evidence is reused" width="860">
 </p>
 
 ### `experiment plan --catalog FILE --budget-minutes N`
@@ -158,10 +149,7 @@ information gain × severity × relevance / cost. An infeasible mandatory
 budget blocks the plan (`BLOCKED`).
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/experiment-plan-dark.svg">
-    <img src="assets/diagrams/experiment-plan-light.svg" alt="Fig. 4, experiment plan: within a 7-minute budget the mandatory 2-minute smoke test is reserved first, a 5-minute vector diagnosis is selected, and a 20-minute physical-board run is skipped" width="860">
-  </picture>
+  <img src="assets/diagrams/experiment-plan.svg" alt="Fig. 4, experiment plan: within a 7-minute budget the mandatory 2-minute smoke test is reserved first, a 5-minute vector diagnosis is selected, and a 20-minute physical-board run is skipped" width="860">
 </p>
 
 ### `experiment run --binary FILE [--timeout SECONDS]`
@@ -207,10 +195,7 @@ to the same unsigned export as `report`, with an explicit `note` — it never
 claims to be signed when it isn't.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/attestation-dark.svg">
-    <img src="assets/diagrams/attestation-light.svg" alt="Fig. 5, attestation: canonical JSON hashed to sha256, signed with Ed25519 via the system openssl, stored in local SQLite, and reported as unsigned when openssl is missing" width="860">
-  </picture>
+  <img src="assets/diagrams/attestation.svg" alt="Fig. 5, attestation: canonical JSON hashed to sha256, signed with Ed25519 via the system openssl, stored in local SQLite, and reported as unsigned when openssl is missing" width="860">
 </p>
 
 ### `verify --attestation FILE --public FILE`
@@ -256,8 +241,8 @@ printf '%s\n%s\n' \
 
 ## Development
 
-The animated README figures in `assets/diagrams/` are generated SVGs (light and
-dark variants, built from the example manifests' real results); regenerate them
+The animated README figures in `assets/diagrams/` are generated SVGs built
+from the example manifests' real results; regenerate them
 with `python assets/diagrams/generate.py`.
 
 ```bash

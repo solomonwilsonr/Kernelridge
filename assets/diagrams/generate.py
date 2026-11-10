@@ -3,12 +3,13 @@
 Each figure is a self-contained SVG laid out like an engineering drawing:
 an isometric line drawing on an isometric grid (left), numbered callouts
 leading to a results panel built from real Kernelridge output (right), and
-a title block along the bottom. Every figure is written twice, in a light
-and a dark palette, so the README can switch with ``<picture>``.
+a title block along the bottom, on a white sheet. A dark palette is kept
+in PALETTES for anyone who wants a dark variant.
 
-Animation is plain CSS + SMIL (no scripts): callout leaders draw in, result
-rows slide in, status chips stamp down in order, then ambient motion loops.
-``prefers-reduced-motion`` jumps straight to the finished frame.
+Animation is plain CSS + SMIL (no scripts) on a looping 12 s storyline:
+callout leaders draw in, signal packets travel along them, result rows slide
+in, status chips stamp down in order, a highlight sweeps the rows, then it
+all retracts and replays. ``prefers-reduced-motion`` shows the finished frame.
 
 No third-party dependencies. Run from the repository root:
 
@@ -26,9 +27,9 @@ TOTAL = 5
 
 PALETTES = {
     "light": {
-        "paper": "#f4f6f8", "grid": "#e1e6ec", "frame": "#9aa6b2",
+        "paper": "#ffffff", "grid": "#eaeef2", "frame": "#9aa6b2",
         "ink": "#1d2733", "soft": "#6b7785", "faint": "#b8c1cb",
-        "top": "#ffffff", "left": "#eef2f5", "right": "#dde4ea",
+        "top": "#ffffff", "left": "#f1f4f7", "right": "#e1e7ed",
         "accent": "#1f8a7a", "accent_soft": "#1f8a7a16",
         "pass": "#2f8a57", "review": "#c4861a", "unknown": "#7d8794",
         "fail": "#c2463b", "warn_fill": "#f6dfb0", "hot_fill": "#f4c9c2",
@@ -132,29 +133,37 @@ text {{ font-family: "Inter", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sa
 .hid {{ stroke: {P['soft']}; stroke-width: .9; stroke-dasharray: 3 4; fill: none; }}
 .rule {{ stroke: {P['faint']}; stroke-width: 1; stroke-dasharray: 2 4; }}
 
+/* One 12 s storyline that loops: leaders draw, rows slide in, chips stamp,
+   everything holds, then retracts in the same order and starts again. */
 .lead {{ fill: none; stroke: {P['accent']}; stroke-width: 1.4;
          stroke-dasharray: 1; stroke-dashoffset: 1;
-         animation: draw .9s cubic-bezier(.6,0,.2,1) forwards; }}
-.in   {{ opacity: 0; animation: in .6s ease-out forwards; }}
-.row  {{ opacity: 0; animation: row .7s cubic-bezier(.2,.7,.2,1) forwards; }}
+         animation: draw 12s cubic-bezier(.6,0,.2,1) infinite both; }}
+.row  {{ opacity: 0; animation: row 12s cubic-bezier(.2,.7,.2,1) infinite both; }}
 .chip {{ opacity: 0; transform-box: fill-box; transform-origin: center;
-         animation: stamp .45s cubic-bezier(.3,1.6,.5,1) forwards; }}
+         animation: stamp 12s cubic-bezier(.3,1.5,.5,1) infinite both; }}
+.hs   {{ opacity: 0; animation: hs 12s ease-out infinite both; }}
+.in   {{ opacity: 0; animation: in .6s ease-out forwards; }}
 .hot  {{ transform-box: fill-box; transform-origin: center;
-         animation: hot 2.6s ease-out infinite; }}
+         animation: hot 2.4s ease-out infinite; }}
 .cursor {{ animation: blink 1s steps(1) infinite; }}
-.sweep {{ animation: sweep 7s ease-in-out 4.5s infinite; opacity: 0; }}
+.sweep {{ opacity: 0; animation: sweep 12s ease-in-out infinite both; }}
 
-@keyframes draw  {{ to {{ stroke-dashoffset: 0; }} }}
+@keyframes draw  {{ 0% {{ stroke-dashoffset: 1; }} 7%,84% {{ stroke-dashoffset: 0; }} 91%,100% {{ stroke-dashoffset: -1; }} }}
+@keyframes row   {{ 0% {{ opacity: 0; transform: translateX(16px); }} 5%,84% {{ opacity: 1; transform: none; }}
+                    90%,100% {{ opacity: 0; transform: translateX(-8px); }} }}
+@keyframes stamp {{ 0% {{ opacity: 0; transform: scale(1.8); }} 3.5%,84% {{ opacity: 1; transform: scale(1); }}
+                    89%,100% {{ opacity: 0; transform: scale(.85); }} }}
+@keyframes hs    {{ 0% {{ opacity: 0; }} 3%,86% {{ opacity: 1; }} 92%,100% {{ opacity: 0; }} }}
 @keyframes in    {{ to {{ opacity: 1; }} }}
-@keyframes row   {{ from {{ opacity: 0; transform: translateX(14px); }} to {{ opacity: 1; transform: none; }} }}
-@keyframes stamp {{ from {{ opacity: 0; transform: scale(1.7); }} to {{ opacity: 1; transform: scale(1); }} }}
 @keyframes hot   {{ 0% {{ transform: scale(1); opacity: .7; }} 70%,100% {{ transform: scale(2.6); opacity: 0; }} }}
 @keyframes blink {{ 50% {{ opacity: 0; }} }}
-@keyframes sweep {{ 0% {{ opacity: 0; transform: translateY(0); }} 8% {{ opacity: 1; }}
-                    55% {{ opacity: 1; transform: translateY(280px); }} 62%,100% {{ opacity: 0; transform: translateY(280px); }} }}
+@keyframes sweep {{ 0%,30% {{ opacity: 0; transform: translateY(0); }} 33% {{ opacity: 1; transform: translateY(0); }}
+                    64% {{ opacity: 1; transform: translateY(272px); }} 68%,100% {{ opacity: 0; transform: translateY(272px); }} }}
 @media (prefers-reduced-motion: reduce) {{
-  * {{ animation-duration: 1ms !important; animation-delay: 0s !important;
-       animation-iteration-count: 1 !important; }}
+  *, .lead, .row, .chip, .hs, .in, .sweep {{ animation: none !important; }}
+  .row, .chip, .hs, .in {{ opacity: 1 !important; }}
+  .lead {{ stroke-dashoffset: 0 !important; }}
+  .sweep {{ opacity: 0 !important; }}
 }}
 """
 
@@ -236,11 +245,20 @@ def panel(P, kicker, heading, rows, hotspots, summary) -> str:
         # Horizontal out to a shared column, fan to the row, then in. With
         # hotspots ordered top-to-bottom like the rows, leaders never cross.
         out.append(
-            f'<path class="lead" pathLength="1" style="animation-delay:{d:.2f}s" '
+            f'<path id="lead{i}" class="lead" pathLength="1" style="animation-delay:{d:.2f}s" '
             f'd="M{hx:.1f} {hy:.1f} H{FAN_X0} L{FAN_X1} {ry} H{PANEL_X - 4}"/>'
         )
+        # a signal packet runs hotspot -> row three times per 12 s cycle
         out.append(
-            f'<g class="in" style="animation-delay:{max(d - .2, 0):.2f}s">'
+            f'<circle r="3.4" fill="{P["accent"]}" opacity="0">'
+            f'<animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.02;.26;.3;1" '
+            f'dur="4s" begin="{d + 1.0:.2f}s" repeatCount="indefinite"/>'
+            f'<animateMotion dur="4s" begin="{d + 1.0:.2f}s" repeatCount="indefinite" '
+            f'keyPoints="0;1;1" keyTimes="0;.28;1" calcMode="linear">'
+            f'<mpath href="#lead{i}" xlink:href="#lead{i}"/></animateMotion></circle>'
+        )
+        out.append(
+            f'<g class="hs" style="animation-delay:{max(d - .2, 0):.2f}s">'
             f'<circle class="hot" cx="{hx:.1f}" cy="{hy:.1f}" r="6" fill="none" stroke="{P["accent"]}" stroke-width="1.5" style="animation-delay:{d + 1.2:.2f}s"/>'
             f'<circle cx="{hx:.1f}" cy="{hy:.1f}" r="5.5" fill="{P["paper"]}" stroke="{P["accent"]}" stroke-width="2"/>'
             f'<circle cx="{hx:.1f}" cy="{hy:.1f}" r="2" fill="{P["accent"]}"/></g>'
@@ -268,7 +286,7 @@ def panel(P, kicker, heading, rows, hotspots, summary) -> str:
 
 def sheet(P, *, title, desc, drawing, extra_css, fig_no, fig_name, command,
           kicker, heading, rows, hotspots, summary) -> str:
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-labelledby="t d">
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-labelledby="t d">
 <title id="t">{title}</title>
 <desc id="d">{desc}</desc>
 <style>{css(P)}{extra_css}</style>
@@ -302,7 +320,7 @@ def fig_preflight(P):
     d.append(f'<text class="mono vmark" x="{vx:.1f}" y="{vy + 5:.1f}" text-anchor="middle" font-size="14" font-weight="700">v</text>')
     # glibc package
     d.append(iso.box(8.6, 6.4, .5, 1.0, 2.6, .5))
-    d.append(face_text(iso.m_right(9.6, 9.0, .5), .25, .15, ".34", "glibc 2.38", P["soft"]))
+    d.append(face_text(iso.m_right(9.6, 9.0, .5), .3, .13, ".3", "libc", P["soft"], "700"))
     # SoC
     d.append(iso.box(2.5, 2.5, .5, 5, 5, 1.0))
     m = iso.m_top(2.5, 2.5, 1.5)
@@ -388,7 +406,7 @@ def fig_verdicts(P):
               ("everything matches", "static metadata only · approval required", "REVIEW"),
               ("experiment run", "sandboxed smoke test is the real evidence", "RUNTIME")],
         hotspots=hot,
-        summary="FAIL > UNKNOWN > REVIEW · a static match is never PASS",
+        summary="FAIL > UNKNOWN > REVIEW · static match ≠ PASS",
     )
 
 
@@ -593,13 +611,13 @@ FIGURES = [
 
 
 def main() -> None:
+    P = PALETTES["light"]
     for old in OUT.glob("*.svg"):
         old.unlink()
     for no, (name, fn) in enumerate(FIGURES, 1):
-        for mode, P in PALETTES.items():
-            svg = sheet(P, fig_no=no, **fn(P))
-            (OUT / f"{name}-{mode}.svg").write_text(svg, encoding="utf-8")
-            print(f"wrote assets/diagrams/{name}-{mode}.svg")
+        svg = sheet(P, fig_no=no, **fn(P))
+        (OUT / f"{name}.svg").write_text(svg, encoding="utf-8")
+        print(f"wrote assets/diagrams/{name}.svg")
 
 
 if __name__ == "__main__":
