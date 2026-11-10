@@ -26,6 +26,14 @@ class CoreTests(unittest.TestCase):
         del self.machine['abi']
         self.assertEqual(preflight(self.machine, self.artifact)['decision'], 'UNKNOWN')
 
+    def test_omitted_required_extensions_is_reviewed_not_unknown(self):
+        artifact = dict(self.artifact)
+        artifact.pop('required_extensions', None)
+        report = preflight(self.machine, artifact)
+        isa_finding = next(f for f in report['findings'] if f['rule'] == 'isa_extensions')
+        self.assertEqual(isa_finding['status'], 'PASS')
+        self.assertEqual(report['decision'], 'REVIEW')
+
     def test_invalidation_and_reuse(self):
         after = copy.deepcopy(self.machine)
         after['kernel'] = '6.12'

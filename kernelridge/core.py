@@ -58,7 +58,12 @@ def preflight(machine, artifact):
     findings = []
 
     def check(rule, expected, actual, compatible=None):
-        status = "UNKNOWN" if expected is None or actual is None else "PASS" if (expected == actual if compatible is None else compatible) else "FAIL"
+        if compatible is not None:
+            status = "PASS" if compatible else "FAIL"
+        elif expected is None or actual is None:
+            status = "UNKNOWN"
+        else:
+            status = "PASS" if expected == actual else "FAIL"
         findings.append({"rule": rule, "status": status, "required": expected, "observed": actual})
 
     check("architecture", artifact["architecture"], machine["architecture"])
