@@ -59,7 +59,16 @@ def main():
     store_show = store_modes.add_parser("show")
     store_show.add_argument("--sha256", required=True)
     store_show.add_argument("--db", default=store_module.DEFAULT_PATH)
+    serve = sub.add_parser("serve", help="Serve a minimal, read-only HTML/JSON dashboard over a stored report history")
+    serve.add_argument("--db", default=store_module.DEFAULT_PATH)
+    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--bind", default="127.0.0.1")
     args = parser.parse_args()
+    if args.command == "serve":
+        from .dashboard import run_forever
+        print(f"kernelridge dashboard listening on http://{args.bind}:{args.port} (Ctrl+C to stop)")
+        run_forever(args.db, args.port, args.bind)
+        return 0
     try:
         if args.command == "discover":
             result = {"id": platform.node() or "local", "architecture": {"riscv64": "riscv64", "aarch64": "arm64"}.get(platform.machine(), platform.machine()), "kernel": platform.release(), "isa_extensions": None, "abi": None, "libraries": {}, "source": "local OS; ISA and ABI require verified inventory"}
