@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 640" width="1024" height="640" role="img" aria-labelledby="t d">
+<title id="t">Kernelridge attestation</title>
+<desc id="d">An isometric safe with a rotating combination dial, holding a report digest: SHA-256 canonical digest, Ed25519 signature via openssl, local SQLite history, and an honest unsigned fallback.</desc>
+<style>
+text { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        fill: #2c2c2a; font-size: 21px; letter-spacing: .1px; }
+.mono { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+         font-size: 15px; fill: #8f8c82; }
+.solid { stroke: #2c2c2a; stroke-width: 1.4; stroke-linejoin: round; }
+.top { fill: #fdfcf8; } .left { fill: #f2efe6; } .right { fill: #e8e4d8; }
+.wire { fill: none; stroke: #2c2c2a; stroke-width: 1.3; stroke-linejoin: round; }
+.thin { fill: none; stroke: #2c2c2a; stroke-width: .9; }
+.hidden { stroke: #8f8c82; stroke-width: .8; stroke-dasharray: 3 4; }
+.cons { stroke: #8f8c82; stroke-width: .9; fill: none; }
+.dash { stroke: #8f8c82; stroke-width: .8; stroke-dasharray: 2 5; fill: none; }
+.node { fill: #9aae8c; }
+.ring { fill: #f8f6ef; stroke: #2c2c2a; stroke-width: 1.3; }
+
+.lead { fill: none; stroke: #2c2c2a; stroke-width: 1.2;
+         stroke-dasharray: 1; stroke-dashoffset: 1;
+         animation: draw 1.1s cubic-bezier(.6,0,.2,1) forwards; }
+.fade { opacity: 0; animation: fade .7s ease-out forwards; }
+.rise { opacity: 0; animation: rise .8s ease-out forwards; }
+.obj  { opacity: 0; animation: fade 1s ease-out .1s forwards; }
+.float { animation: float 6s ease-in-out 1.2s infinite; }
+.pulse { transform-box: fill-box; transform-origin: center;
+          animation: pulse 3.2s ease-in-out infinite; }
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes fade { to { opacity: 1; } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); }
+                   to { opacity: 1; transform: none; } }
+@keyframes float { 0%,100% { transform: translateY(0); }
+                    50% { transform: translateY(-5px); } }
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: .85; }
+                    50% { transform: scale(1.6); opacity: .35; } }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+       animation-delay: 0s !important; }
+}
+
+.lock { animation: lock 7s ease-in-out 1.8s infinite; }
+@keyframes lock { 0%,78% { fill: #d9a441; } 86%,100% { fill: #9aae8c; } }
+</style>
+
+<defs>
+  <pattern id="dots" width="32" height="32" patternUnits="userSpaceOnUse">
+    <circle cx="16" cy="16" r="1" fill="#d6d1c1"/>
+  </pattern>
+  <pattern id="grid" width="128" height="128" patternUnits="userSpaceOnUse" x="0" y="10">
+    <path d="M128 0H0V128" fill="none" stroke="#e7e3d7" stroke-width="1"/>
+  </pattern>
+</defs>
+<rect width="1024" height="640" fill="#f8f6ef"/>
+<rect width="1024" height="640" fill="url(#dots)"/>
+<rect width="1024" height="640" fill="url(#grid)"/>
+
+<g class="fade" style="animation-delay:.05s"><line class="cons" x1="10" y1="330" x2="286" y2="330"/><line class="cons" x1="738" y1="330" x2="1014" y2="330"/><path class="cons" d="M276 325 L286 330 L276 335"/><path class="cons" d="M748 325 L738 330 L748 335"/><line class="cons" x1="300" y1="196" x2="724" y2="196"/><line class="cons" x1="300" y1="470" x2="724" y2="470"/><line class="cons" x1="200" y1="256" x2="200" y2="530"/><line class="cons" x1="824" y1="196" x2="824" y2="470"/><line class="cons" x1="396" y1="196" x2="396" y2="256"/><line class="cons" x1="628" y1="410" x2="628" y2="470"/><circle class="node pulse" cx="10" cy="330" r="4.5" style="animation-delay:1.40s"/><circle class="node pulse" cx="1014" cy="330" r="4.5" style="animation-delay:1.95s"/><circle class="node pulse" cx="200" cy="330" r="4.5" style="animation-delay:2.50s"/><circle class="node pulse" cx="824" cy="330" r="4.5" style="animation-delay:3.05s"/><circle class="node pulse" cx="300" cy="196" r="4.5" style="animation-delay:3.60s"/><circle class="node pulse" cx="396" cy="196" r="4.5" style="animation-delay:1.40s"/><circle class="node pulse" cx="724" cy="196" r="4.5" style="animation-delay:1.95s"/><circle class="node pulse" cx="824" cy="196" r="4.5" style="animation-delay:2.50s"/><circle class="node pulse" cx="300" cy="470" r="4.5" style="animation-delay:3.05s"/><circle class="node pulse" cx="628" cy="470" r="4.5" style="animation-delay:3.60s"/><circle class="node pulse" cx="724" cy="470" r="4.5" style="animation-delay:1.40s"/><circle class="node pulse" cx="200" cy="470" r="4.5" style="animation-delay:1.95s"/><circle class="node pulse" cx="200" cy="530" r="4.5" style="animation-delay:2.50s"/><circle cx="492" cy="196" r="2.4" fill="#2c2c2a"/></g>
+<g class="obj"><g class="float">
+<polygon class="solid top" points="392.8,385.2 401.2,390.0 392.8,394.8 384.5,390.0"/>
+<polygon class="solid left" points="384.5,399.6 392.8,404.4 392.8,394.8 384.5,390.0"/>
+<polygon class="solid right" points="401.2,399.6 392.8,404.4 392.8,394.8 401.2,390.0"/>
+<polygon class="solid top" points="512.0,454.0 520.3,458.8 512.0,463.6 503.7,458.8"/>
+<polygon class="solid left" points="503.7,468.4 512.0,473.2 512.0,463.6 503.7,458.8"/>
+<polygon class="solid right" points="520.3,468.4 512.0,473.2 512.0,463.6 520.3,458.8"/>
+<polygon class="solid top" points="631.2,385.2 639.5,390.0 631.2,394.8 622.8,390.0"/>
+<polygon class="solid left" points="622.8,399.6 631.2,404.4 631.2,394.8 622.8,390.0"/>
+<polygon class="solid right" points="639.5,399.6 631.2,404.4 631.2,394.8 639.5,390.0"/>
+<line class="hidden" x1="512.0" y1="310.0" x2="650.6" y2="390.0"/>
+<line class="hidden" x1="512.0" y1="310.0" x2="373.4" y2="390.0"/>
+<line class="hidden" x1="512.0" y1="310.0" x2="512.0" y2="166.0"/>
+<polygon class="solid top" points="512.0,166.0 650.6,246.0 512.0,326.0 373.4,246.0"/>
+<polygon class="solid left" points="373.4,390.0 512.0,470.0 512.0,326.0 373.4,246.0"/>
+<polygon class="solid right" points="650.6,390.0 512.0,470.0 512.0,326.0 650.6,246.0"/>
+
+<g transform="matrix(13.856,8.000,0,-16.000,373.4,390.0)">
+  <rect x=".7" y=".7" width="8.4" height="7.6" fill="none" stroke="#2c2c2a" stroke-width="1.3" vector-effect="non-scaling-stroke"/>
+  <rect x="1.1" y="1.1" width="7.6" height="6.8" fill="none" stroke="#8f8c82" stroke-width=".8" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>
+  <line x1="4.6" y1="1.1" x2="4.6" y2="7.9" stroke="#8f8c82" stroke-width=".7" stroke-dasharray="2 5" vector-effect="non-scaling-stroke"/>
+  <line x1="1.1" y1="4.5" x2="8.7" y2="4.5" stroke="#8f8c82" stroke-width=".7" stroke-dasharray="2 5" vector-effect="non-scaling-stroke"/>
+  <line x1="5.950" y1="4.500" x2="6.150" y2="4.500" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.904" y1="4.849" x2="6.097" y2="4.901" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.769" y1="5.175" x2="5.942" y2="5.275" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.555" y1="5.455" x2="5.696" y2="5.596" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.275" y1="5.669" x2="5.375" y2="5.842" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="4.949" y1="5.804" x2="5.001" y2="5.997" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="4.600" y1="5.850" x2="4.600" y2="6.050" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="4.251" y1="5.804" x2="4.199" y2="5.997" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.925" y1="5.669" x2="3.825" y2="5.842" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.645" y1="5.455" x2="3.504" y2="5.596" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.431" y1="5.175" x2="3.258" y2="5.275" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.296" y1="4.849" x2="3.103" y2="4.901" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.250" y1="4.500" x2="3.050" y2="4.500" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.296" y1="4.151" x2="3.103" y2="4.099" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.431" y1="3.825" x2="3.258" y2="3.725" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.645" y1="3.545" x2="3.504" y2="3.404" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="3.925" y1="3.331" x2="3.825" y2="3.158" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="4.251" y1="3.196" x2="4.199" y2="3.003" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="4.600" y1="3.150" x2="4.600" y2="2.950" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="4.949" y1="3.196" x2="5.001" y2="3.003" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.275" y1="3.331" x2="5.375" y2="3.158" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.555" y1="3.545" x2="5.696" y2="3.404" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.769" y1="3.825" x2="5.942" y2="3.725" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/><line x1="5.904" y1="4.151" x2="6.097" y2="4.099" stroke="#2c2c2a" stroke-width=".8" vector-effect="non-scaling-stroke"/>
+  <circle cx="4.6" cy="4.5" r="1.25" fill="#fdfcf8" stroke="#2c2c2a" stroke-width="1.2" vector-effect="non-scaling-stroke"/>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" dur="7s" begin="1.8s"
+      repeatCount="indefinite" values="0 4.6 4.5;95 4.6 4.5;95 4.6 4.5;-60 4.6 4.5;-60 4.6 4.5;30 4.6 4.5;30 4.6 4.5;0 4.6 4.5"
+      keyTimes="0;.15;.25;.42;.52;.66;.8;1" calcMode="spline"
+      keySplines=".5 0 .2 1;0 0 1 1;.5 0 .2 1;0 0 1 1;.5 0 .2 1;0 0 1 1;.5 0 .2 1"/>
+    <circle cx="4.6" cy="4.5" r=".8" fill="#f2efe6" stroke="#2c2c2a" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <line x1="4.6" y1="4.5" x2="4.6" y2="5.25" stroke="#2c2c2a" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+    <circle cx="4.6" cy="4.5" r=".18" fill="#2c2c2a"/>
+  </g>
+  <rect x="8.85" y="5.6" width=".45" height="1.3" rx=".1" fill="#fdfcf8" stroke="#2c2c2a" stroke-width="1" vector-effect="non-scaling-stroke"/>
+  <rect x="8.85" y="2.1" width=".45" height="1.3" rx=".1" fill="#fdfcf8" stroke="#2c2c2a" stroke-width="1" vector-effect="non-scaling-stroke"/>
+  <circle class="lock" cx="7.6" cy="7.3" r=".22" fill="#9aae8c"/>
+</g>
+
+<g transform="matrix(13.856,-8.000,0,-16.000,512.0,470.0)">
+  <rect x="1.6" y="5.2" width="6.8" height="1.6" fill="none" stroke="#2c2c2a" stroke-width=".9" vector-effect="non-scaling-stroke"/>
+  <g transform="translate(2.0 5.8) scale(1,-1)"><text style="font-size:.5px;font-family:Menlo,Consolas,monospace;fill:#8f8c82">sha256:9f2c…e41a</text></g>
+  <line x1="2.2" y1="1.2" x2="7.8" y2="1.2" stroke="#8f8c82" stroke-width=".7" stroke-dasharray="2 5" vector-effect="non-scaling-stroke"/>
+</g>
+</g></g>
+
+<g>
+  <path class="lead" pathLength="1" style="animation-delay:0.50s"
+        d="M392 250 L156.4 102.0"/>
+  <circle class="node" cx="271.0" cy="174.0" r="4.5"/>
+  <g class="fade" style="animation-delay:1.40s">
+    <path class="thin" d="M167.2 104.0 L156.4 102.0 L162.8 110.9"/>
+    <circle class="ring" cx="150" cy="98" r="7.5"/>
+  </g>
+  <g class="rise" style="animation-delay:1.50s">
+    <text text-anchor="start"><tspan x="80" y="51">sha256 canonical</tspan><tspan x="80" y="76">digest</tspan></text>
+  </g>
+  <circle r="3" fill="#9aae8c" opacity="0">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1"
+             dur="3.6s" begin="2.5s" repeatCount="indefinite"/>
+    <animateMotion dur="3.6s" begin="2.5s" repeatCount="indefinite"
+                   path="M150 98 L392 250" keyPoints="0;1;1" keyTimes="0;.7;1"
+                   calcMode="linear"/>
+  </circle>
+</g>
+<g>
+  <path class="lead" pathLength="1" style="animation-delay:0.80s"
+        d="M632 250 L867.6 102.0"/>
+  <circle class="node" cx="753.0" cy="174.0" r="4.5"/>
+  <g class="fade" style="animation-delay:1.70s">
+    <path class="thin" d="M861.2 110.9 L867.6 102.0 L856.8 104.0"/>
+    <circle class="ring" cx="874" cy="98" r="7.5"/>
+  </g>
+  <g class="rise" style="animation-delay:1.80s">
+    <text text-anchor="end"><tspan x="944" y="51">ed25519 via</tspan><tspan x="944" y="76">system openssl</tspan></text>
+  </g>
+  <circle r="3" fill="#9aae8c" opacity="0">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1"
+             dur="3.6s" begin="2.8s" repeatCount="indefinite"/>
+    <animateMotion dur="3.6s" begin="2.8s" repeatCount="indefinite"
+                   path="M874 98 L632 250" keyPoints="0;1;1" keyTimes="0;.7;1"
+                   calcMode="linear"/>
+  </circle>
+</g>
+<g>
+  <path class="lead" pathLength="1" style="animation-delay:1.10s"
+        d="M392 418 L156.6 544.5"/>
+  <circle class="node" cx="271.0" cy="483.0" r="4.5"/>
+  <g class="fade" style="animation-delay:2.00s">
+    <path class="thin" d="M163.7 536.0 L156.6 544.5 L167.5 543.2"/>
+    <circle class="ring" cx="150" cy="548" r="7.5"/>
+  </g>
+  <g class="rise" style="animation-delay:2.10s">
+    <text text-anchor="start"><tspan x="80" y="586">local sqlite</tspan><tspan x="80" y="611">history</tspan></text>
+  </g>
+  <circle r="3" fill="#9aae8c" opacity="0">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1"
+             dur="3.6s" begin="3.1s" repeatCount="indefinite"/>
+    <animateMotion dur="3.6s" begin="3.1s" repeatCount="indefinite"
+                   path="M150 548 L392 418" keyPoints="0;1;1" keyTimes="0;.7;1"
+                   calcMode="linear"/>
+  </circle>
+</g>
+<g>
+  <path class="lead" pathLength="1" style="animation-delay:1.40s"
+        d="M632 418 L867.4 544.5"/>
+  <circle class="node" cx="753.0" cy="483.0" r="4.5"/>
+  <g class="fade" style="animation-delay:2.30s">
+    <path class="thin" d="M856.5 543.2 L867.4 544.5 L860.3 536.0"/>
+    <circle class="ring" cx="874" cy="548" r="7.5"/>
+  </g>
+  <g class="rise" style="animation-delay:2.40s">
+    <text text-anchor="end"><tspan x="944" y="586">never claims</tspan><tspan x="944" y="611">signed when not</tspan></text>
+  </g>
+  <circle r="3" fill="#9aae8c" opacity="0">
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1"
+             dur="3.6s" begin="3.4s" repeatCount="indefinite"/>
+    <animateMotion dur="3.6s" begin="3.4s" repeatCount="indefinite"
+                   path="M874 548 L632 418" keyPoints="0;1;1" keyTimes="0;.7;1"
+                   calcMode="linear"/>
+  </circle>
+</g>
+<text class="mono fade" style="animation-delay:.4s" x="512" y="38" text-anchor="middle">kernelridge attest --input --private</text>
+</svg>

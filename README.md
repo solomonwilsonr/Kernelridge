@@ -19,11 +19,19 @@ and it is explicit about what it can and cannot verify.
 > referenced by that proposal was empty; this project does not include or
 > claim to reuse any VCM Machines code.
 
+<p align="center">
+  <img src="assets/diagrams/preflight.svg" alt="Isometric RISC-V chip: target is riscv64/lp64d with glibc 2.38, release requires i m v, so preflight reports FAIL before it ships" width="760">
+</p>
+
 ## Why Kernelridge
 
 Most compatibility checks either rubber-stamp a deploy because the metadata
 *looks* right, or fail silently and let you find out at runtime. Kernelridge
 takes a stricter stance:
+
+<p align="center">
+  <img src="assets/diagrams/verdicts.svg" alt="Release artifact in an inspection frame with four verdicts: PASS (runtime check only), REVIEW (static match), UNKNOWN (not in inventory), FAIL (mismatch named)" width="760">
+</p>
 
 - **No optimistic PASS.** A static match between target and release metadata
   is reported as `REVIEW`, never `PASS` — only a real runtime check earns that.
@@ -130,6 +138,10 @@ invalidation propagates transitively: a record that `depends_on` an
 invalidated claim is itself flagged, to a fixpoint. Evidence lists without
 `claim_id`/`depends_on` behave exactly as before.
 
+<p align="center">
+  <img src="assets/diagrams/invalidation.svg" alt="Stacked evidence slabs under a changed revision; invalidation propagates down depends_on edges to a fixpoint" width="760">
+</p>
+
 ### `experiment plan --catalog FILE --budget-minutes N`
 
 Reserves mandatory coverage first, then ranks optional experiments by
@@ -178,6 +190,10 @@ the canonical digest with that Ed25519 key (`signed: true`, `signature`,
 to the same unsigned export as `report`, with an explicit `note` — it never
 claims to be signed when it isn't.
 
+<p align="center">
+  <img src="assets/diagrams/attestation.svg" alt="Isometric safe with a combination dial: SHA-256 canonical digest, Ed25519 via system openssl, local SQLite history, never claims signed when not" width="760">
+</p>
+
 ### `verify --attestation FILE --public FILE`
 
 Verifies an `attest`-produced record's signature against a public key.
@@ -220,6 +236,9 @@ printf '%s\n%s\n' \
 ```
 
 ## Development
+
+The animated README illustrations in `assets/diagrams/` are generated SVGs;
+regenerate them with `python assets/diagrams/generate.py`.
 
 ```bash
 python -m unittest discover -s tests -v
