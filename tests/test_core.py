@@ -2,7 +2,7 @@ import copy
 import json
 import unittest
 from pathlib import Path
-from kernelridge.core import preflight, invalidate, plan, digest
+from kernelridge.core import preflight, invalidate, plan, digest, REMEDIATION_HINTS, DEFAULT_LIBRARY_REMEDIATION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,10 +17,26 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(report['physical_hardware_verified'])
 
     def test_three_incompatibility_classes(self):
-        for field, value in [('architecture', 'arm64'), ('required_extensions', ['v']), ('abi', 'lp64')]:
+        for field, value, rule in [('architecture', 'arm64', 'architecture'), ('required_extensions', ['v'], 'isa_extensions'), ('abi', 'lp64', 'abi')]:
             with self.subTest(field=field):
                 artifact = dict(self.artifact, **{field: value})
-                self.assertEqual(preflight(self.machine, artifact)['decision'], 'FAIL')
+                report = preflight(self.machine, artifact)
+                self.assertEqual(report['decision'], 'FAIL')
+                finding = next(f for f in report['findings'] if f['rule'] == rule)
+                self.assertEqual(finding['remediation'], REMEDIATION_HINTS[rule])
+
+    def test_library_mismatch_gets_remediation_hint(self):
+        artifact = dict(self.artifact, libraries={'glibc': '2.99'})
+        report = preflight(self.machine, artifact)
+        self.assertEqual(report['decision'], 'FAIL')
+        finding = next(f for f in report['findings'] if f['rule'] == 'library.glibc')
+        self.assertEqual(finding['remediation'], DEFAULT_LIBRARY_REMEDIATION)
+
+    def test_passing_and_unknown_findings_have_no_remediation(self):
+        report = preflight(self.machine, self.artifact)
+        self.assertEqual(report['decision'], 'REVIEW')
+        for finding in report['findings']:
+            self.assertNotIn('remediation', finding)
 
     def test_missing_inventory_is_unknown(self):
         del self.machine['abi']

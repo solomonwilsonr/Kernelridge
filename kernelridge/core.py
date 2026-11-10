@@ -65,6 +65,23 @@ def invalidate(evidence, before, after):
     return {"changed_paths": changed, "evidence": result}
 
 
+# Deterministic, rule-keyed remediation lookup table -- a heuristic hint, not AI/ML diagnosis.
+REMEDIATION_HINTS = {
+    "architecture": "Architectures differ: build or select a release targeting the machine's actual architecture, or correct the inventory if it is wrong.",
+    "isa_extensions": "The release requires ISA extensions the machine does not expose: verify the machine's ISA inventory or select/build a release that does not require them.",
+    "abi": "ABI strings differ: rebuild the release for the machine's ABI, or correct the inventory if it is wrong.",
+}
+DEFAULT_LIBRARY_REMEDIATION = "Library version does not match: install the required version on the machine, or rebuild the release against the machine's installed version."
+
+
+def remediation_hint(rule):
+    if rule in REMEDIATION_HINTS:
+        return REMEDIATION_HINTS[rule]
+    if rule.startswith("library."):
+        return DEFAULT_LIBRARY_REMEDIATION
+    return "Compatibility constraint not satisfied; review required vs observed values."
+
+
 def preflight(machine, artifact):
     validate(machine, "machine")
     validate(artifact, "artifact")
@@ -77,7 +94,10 @@ def preflight(machine, artifact):
             status = "UNKNOWN"
         else:
             status = "PASS" if expected == actual else "FAIL"
-        findings.append({"rule": rule, "status": status, "required": expected, "observed": actual})
+        finding = {"rule": rule, "status": status, "required": expected, "observed": actual}
+        if status == "FAIL":
+            finding["remediation"] = remediation_hint(rule)
+        findings.append(finding)
 
     check("architecture", artifact["architecture"], machine["architecture"])
     required, available = artifact.get("required_extensions"), machine.get("isa_extensions")
