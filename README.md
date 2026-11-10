@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Kernelridge logo" width="420">
+</p>
+
 # Kernelridge
 
 **Know what breaks before it breaks.**
