@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Kernelridge logo" width="420">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.png">
+    <img src="assets/logo.png" alt="Kernelridge logo" width="420">
+  </picture>
 </p>
 
 # Kernelridge
