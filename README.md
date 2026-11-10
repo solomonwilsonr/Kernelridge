@@ -40,11 +40,15 @@ takes a stricter stance:
 | Capability | Command |
 |---|---|
 | Collect local OS/architecture metadata | `discover` |
-| Check target vs. release compatibility (arch, ISA extensions, ABI, libraries) | `preflight` |
-| Flag evidence invalidated by a revision change | `invalidate` |
+| Check target vs. release compatibility (arch, ISA extensions, ABI, libraries); FAIL findings include a deterministic remediation hint | `preflight` |
+| Flag evidence invalidated by a revision change, transitively across an explicit evidence dependency graph | `invalidate` |
 | Plan experiments under a time budget (mandatory coverage first, then ranked by information gain × severity × relevance / cost) | `experiment plan` |
 | Run a single sandboxed RISC-V static ELF smoke test | `experiment run` |
+| Derive architecture/ABI/ISA-extension facts from a real ELF binary | `inspect` |
 | Wrap a record with a canonical SHA-256 digest | `report` |
+| Generate an Ed25519 keypair and sign/verify a report digest (via the system `openssl`) | `keygen`, `attest`, `verify` |
+| Persist and query report history in a local SQLite store | `store save`/`list`/`show` |
+| Serve a minimal read-only HTML/JSON dashboard over stored report history | `serve` |
 
 ## Installation
 
@@ -73,8 +77,20 @@ without installing, use `python -m kernelridge` instead.
 .venv/bin/kernelridge experiment plan \
   --catalog examples/catalog.json --budget-minutes 7
 
-# Wrap the report with a canonical SHA-256 digest
+# Wrap the report with a canonical SHA-256 digest (unsigned)
 .venv/bin/kernelridge --output attestation.json report --input report.json
+
+# Persist the report and list stored history
+.venv/bin/kernelridge store save --input report.json --db .kernelridge/store.db
+.venv/bin/kernelridge store list --db .kernelridge/store.db
+
+# Derive facts from a real ELF binary instead of hand-authoring them
+.venv/bin/kernelridge inspect --binary /path/to/release-binary
+
+# Sign a report digest with a local Ed25519 key (requires openssl on PATH)
+.venv/bin/kernelridge keygen --private key.pem --public key.pub
+.venv/bin/kernelridge attest --input report.json --private key.pem > signed.json
+.venv/bin/kernelridge verify --attestation signed.json --public key.pub
 ```
 
 Notes:
@@ -97,15 +113,21 @@ Checks architecture, explicit ISA extension sets, exact ABI, and library
 versions. `--target` and `--release` are JSON manifests (see `examples/`).
 ISA extensions must be explicitly enumerated — ISA strings and implied
 extensions are not parsed — and library comparisons use exact versions, not
-semantic ranges.
+semantic ranges. Each `FAIL` finding carries a `remediation` field from a
+small, deterministic, rule-keyed lookup table (architecture/ISA/ABI/library
+mismatch classes) — a heuristic hint, not AI-assisted diagnosis.
 
 ### `invalidate --before FILE --after FILE --evidence FILE`
 
 Compares a before/after revision pair and flags evidence records affected by
 the change. `--evidence` is a JSON list of records with `status`,
-`assumptions` (manifest paths the record depends on), and optional
-`dependencies_complete`. Incomplete dependency coverage forces revalidation
-regardless of whether tracked assumptions changed.
+`assumptions` (manifest paths the record depends on), optional
+`dependencies_complete`, and optional `claim_id`/`depends_on` fields to form
+an explicit evidence dependency graph. Incomplete dependency coverage forces
+revalidation regardless of whether tracked assumptions changed, and
+invalidation propagates transitively: a record that `depends_on` an
+invalidated claim is itself flagged, to a fixpoint. Evidence lists without
+`claim_id`/`depends_on` behave exactly as before.
 
 ### `experiment plan --catalog FILE --budget-minutes N`
 
@@ -129,6 +151,53 @@ Wraps a JSON record with a canonical SHA-256 digest and an
 `approval_required` flag. This is an **unsigned** export, not a cryptographic
 attestation.
 
+### `inspect --binary FILE`
+
+Parses a real ELF binary's header with manual `struct.unpack` (no
+`readelf`/`pyelftools` dependency) and emits a machine/artifact-shaped JSON
+fragment — `architecture`, and for 64-bit RISC-V binaries, the
+`lp64`/`lp64f`/`lp64d`/`lp64q` ABI derived from `e_flags`, plus best-effort
+ISA extensions parsed from a `.riscv.attributes` arch string when the section
+is present. Facts it cannot determine (e.g. ISA extensions with no attributes
+section) are left `null`, never guessed. The output feeds directly into
+`preflight`.
+
+### `keygen --private FILE --public FILE`
+
+Generates a local Ed25519 keypair by shelling out to the system `openssl`
+(`genpkey`/`pkey`). Adds no third-party Python crypto dependency. If
+`openssl` is not on `PATH`, reports `signed: false` with a reason and writes
+no key files.
+
+### `attest --input FILE [--private FILE]`
+
+Like `report`, but if `--private` is given and `openssl` is available, signs
+the canonical digest with that Ed25519 key (`signed: true`, `signature`,
+`algorithm: ed25519`). If `openssl` is missing or signing fails, it degrades
+to the same unsigned export as `report`, with an explicit `note` — it never
+claims to be signed when it isn't.
+
+### `verify --attestation FILE --public FILE`
+
+Verifies an `attest`-produced record's signature against a public key.
+Returns `{"sha256": ..., "valid": true|false}`; invalid attestations exit 1.
+
+### `store save|list|show`
+
+Persists `preflight`/`attest` reports in a local SQLite database keyed by
+their canonical digest (`store save --input FILE --db PATH`), lists stored
+history with optional `--machine-revision`/`--artifact-revision` filters
+(`store list --db PATH`), or fetches one by digest (`store show --sha256 HEX
+--db PATH`). The database path is always explicit (`--db`, default
+`.kernelridge/store.db`); nothing is written outside it.
+
+### `serve --db PATH [--port N] [--bind HOST]`
+
+Serves a minimal, read-only dashboard (stdlib `http.server` only — no web
+framework) over a SQLite store built by `store save`: an HTML index at `/`,
+a JSON listing at `/reports`, and a single record at `/reports/<sha256>`.
+No write endpoints.
+
 ## Development
 
 ```bash
@@ -136,22 +205,36 @@ python -m unittest discover -s tests -v
 python -m pip wheel --no-deps --no-build-isolation . -w dist
 ```
 
-CI checks Python 3.11–3.13. Tests cover ISA/architecture/ABI mismatches,
-unknown inventory, conservative invalidation, unaffected-evidence reuse,
-mandatory experiment budgets, and stable report hashes.
+CI checks Python 3.11–3.13. Tests cover ISA/architecture/ABI/library
+mismatches and their remediation hints, unknown inventory, conservative and
+transitive invalidation, unaffected-evidence reuse, mandatory experiment
+budgets, stable report hashes, ELF header parsing (synthetic x86_64 and
+RISC-V fixtures), SQLite store round-trips, the signed-attestation degrade
+path (and a real openssl round-trip when available), and the read-only
+dashboard over an ephemeral HTTP server.
 
 ## Scope and limitations
 
 This is an initial deterministic CLI foundation, not the full v0.1 definition
-of done described in [the proposal](KERNELRIDGE.md). Explicitly **not**
-implemented yet:
+of done described in [the proposal](KERNELRIDGE.md). Implemented, within a
+stdlib-only, no-third-party-dependency constraint:
 
-- SQLite persistence and dependency graph traversal
-- ELF ABI/attribute extraction (ISA/ABI facts must be supplied, not inferred)
+- SQLite persistence (`store`) and evidence dependency graph traversal
+  (`invalidate`'s `depends_on`)
+- ELF header parsing and best-effort ABI/ISA-extension extraction (`inspect`)
+- Optional Ed25519-signed attestations via the system `openssl` CLI
+  (`keygen`/`attest`/`verify`), degrading gracefully when `openssl` is absent
+- Deterministic, rule-keyed remediation hints on `FAIL` findings
+- A minimal read-only dashboard over stored report history (`serve`)
+
+Explicitly **not** implemented, and not attempted by the features above —
+these require infrastructure (real target hardware, large downloads,
+external services) outside a local-first, dependency-free CLI prototype:
+
 - Target-specific QEMU system images and physical-board validation
-- Signed (vs. digest-only) attestations
-- AI-assisted diagnosis or remediation
-- API, dashboard, and MCP integrations
+- True AI-assisted diagnosis or remediation (the remediation hints above are
+  a fixed lookup table, not a model)
+- A writable API, broader dashboard functionality, or MCP integration
 - Research benchmarks and measured failure-detection guarantees
 
 The experiment planner is a reproducible heuristic; it makes no claim of
