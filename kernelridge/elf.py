@@ -8,7 +8,8 @@ import struct
 from pathlib import Path
 
 EI_NIDENT = 16
-MACHINE_TO_ARCHITECTURE = {62: "x86_64", 183: "arm64", 243: "riscv64"}
+EM_RISCV = 243
+MACHINE_TO_ARCHITECTURE = {62: "x86_64", 183: "arm64"}
 # e_flags & EF_RISCV_FLOAT_ABI_MASK (bits 1-2): 0=soft, 1=single, 2=double, 3=quad.
 RISCV_FLOAT_ABI_SUFFIX = {0x0: "", 0x2: "f", 0x4: "d", 0x6: "q"}
 SHT_RISCV_ATTRIBUTES_SECTION_NAME = ".riscv.attributes"
@@ -93,7 +94,10 @@ def inspect(path):
     """Return a machine/artifact-shaped JSON fragment derived from a real ELF file."""
     data = Path(path).read_bytes()
     hdr = _read_ehdr(data)
-    architecture = MACHINE_TO_ARCHITECTURE.get(hdr["machine"], f"unknown-elf-machine-0x{hdr['machine']:x}")
+    if hdr["machine"] == EM_RISCV:
+        architecture = "riscv64" if hdr["class"] == 64 else "riscv32"
+    else:
+        architecture = MACHINE_TO_ARCHITECTURE.get(hdr["machine"], f"unknown-elf-machine-0x{hdr['machine']:x}")
     abi, extensions = None, None
     if architecture == "riscv64":
         float_abi = RISCV_FLOAT_ABI_SUFFIX.get(hdr["flags"] & 0x6)

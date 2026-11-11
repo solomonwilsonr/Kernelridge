@@ -14,6 +14,16 @@ class AttestDegradeTests(unittest.TestCase):
             self.assertIn('reason', result)
             self.assertFalse((Path(directory) / 'priv.pem').exists())
 
+    def test_keygen_degrades_when_openssl_fails(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as directory:
+            error = subprocess.CalledProcessError(1, ["openssl"], stderr=b"boom")
+            with patch('kernelridge.attest.shutil.which', return_value='/usr/bin/openssl'), \
+                 patch('kernelridge.attest.subprocess.run', side_effect=error):
+                result = attest.keygen(Path(directory) / 'priv.pem', Path(directory) / 'pub.pem')
+            self.assertFalse(result['signed'])
+            self.assertIn('reason', result)
+
     def test_sign_degrades_without_openssl(self):
         with patch('kernelridge.attest.shutil.which', return_value=None):
             self.assertIsNone(attest.sign('deadbeef', '/nonexistent/priv.pem'))

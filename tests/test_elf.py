@@ -61,6 +61,15 @@ class ElfInspectTests(unittest.TestCase):
             self.assertEqual(fragment["abi"], "lp64f")
             self.assertIsNone(fragment["isa_extensions"])
 
+    def test_riscv32_is_not_labeled_riscv64(self):
+        ident = EI_NIDENT_HEADER.pack(b"\x7fELF", 1, 1, 1, 0, 0)
+        fields = struct.pack("<HHIIIIIHHHHHH", 2, 243, 1, 0, 0, 0, 0, 52, 0, 0, 0, 0, 0)
+        with tempfile.NamedTemporaryFile() as binary:
+            binary.write(ident + fields)
+            binary.flush()
+            fragment = inspect(binary.name)
+            self.assertEqual(fragment["architecture"], "riscv32")
+
     def test_rejects_non_elf(self):
         with tempfile.NamedTemporaryFile() as binary:
             binary.write(b"not executable")

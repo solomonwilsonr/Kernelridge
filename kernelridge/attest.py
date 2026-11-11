@@ -24,8 +24,12 @@ def keygen(private_path, public_path):
         return {"signed": False, "reason": "openssl not found on PATH; keypair was not generated"}
     Path(private_path).parent.mkdir(parents=True, exist_ok=True)
     Path(public_path).parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["openssl", "genpkey", "-algorithm", "ed25519", "-out", str(private_path)], check=True, capture_output=True)
-    subprocess.run(["openssl", "pkey", "-in", str(private_path), "-pubout", "-out", str(public_path)], check=True, capture_output=True)
+    try:
+        subprocess.run(["openssl", "genpkey", "-algorithm", "ed25519", "-out", str(private_path)], check=True, capture_output=True)
+        subprocess.run(["openssl", "pkey", "-in", str(private_path), "-pubout", "-out", str(public_path)], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        reason = exc.stderr.decode(errors="replace").strip() if getattr(exc, "stderr", None) else str(exc)
+        return {"signed": False, "reason": f"openssl keygen failed: {reason}"}
     return {"signed": True, "private_key": str(private_path), "public_key": str(public_path)}
 
 
